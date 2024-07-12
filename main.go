@@ -82,60 +82,6 @@ type BinarySearchTree struct {
 	root *Node
 }
 
-// func (tree *BinarySearchTree) insertNode(root *Node, new_node *Node) {
-// 	if new_node.value < root.value {
-// 		if root.left == nil {
-// 			root.left = new_node
-// 		} else {
-// 			tree.insertNode(root.left, new_node)
-// 		}
-// 	} else {
-// 		if root.right == nil {
-// 			root.right = new_node
-// 		} else {
-// 			tree.insertNode(root.right, new_node)
-// 		}
-// 	}
-// }
-
-// func (tree *BinarySearchTree) insert(value int) {
-// 	newNode := &Node{value: value}
-
-// 	if tree.root == nil {
-// 		tree.root = newNode
-// 	} else {
-// 		tree.insertNode(tree.root, newNode)
-// 	}
-// }
-
-// func (tree *BinarySearchTree) searchNode(root *Node, value int) bool {
-// 	if root == nil {
-// 		return false
-// 	}
-
-// 	if value < root.value {
-// 		return tree.searchNode(root.left, value)
-// 	} else if value > root.value {
-// 		return tree.searchNode(root.right, value)
-// 	} else {
-// 		return false
-// 	}
-// }
-
-// func (tree *BinarySearchTree) search(value int) bool {
-// 	return tree.searchNode(tree.root, value)
-// }
-
-// func BinarySearchTreeFromArray(array []int) *BinarySearchTree {
-// 	bst := BinarySearchTree{}
-
-// 	for _, value := range array {
-// 		bst.insert(value)
-// 	}
-
-// 	return &bst
-// }
-
 func (tree *BinarySearchTree) insert(value int) {
 	new_node := &Node{value: value}
 
@@ -146,7 +92,7 @@ func (tree *BinarySearchTree) insert(value int) {
 
 	current_node := tree.root
 
-	for {
+	for true {
 		if value < current_node.value {
 			if current_node.left == nil {
 				current_node.left = new_node
@@ -189,63 +135,119 @@ func BinarySearchTreeFromArray(array []int) *BinarySearchTree {
 	return &bst
 }
 
-type AVLTreeNode struct {
-	value  int
-	left   *AVLTreeNode
-	right  *AVLTreeNode
-	height int
-}
+// AVL Tree
 
 type AVLTree struct {
-	root *AVLTreeNode
+	root *Node
+}
+
+func (tree *AVLTree) height(node *Node) int {
+	if node == nil {
+		return -1
+	}
+
+	left_height := tree.height(node.left)
+	right_height := tree.height(node.right)
+
+	if left_height > right_height {
+		return left_height + 1
+	} else {
+		return right_height + 1
+	}
+}
+
+func (tree *AVLTree) balanceFactor(node *Node) int {
+	if node == nil {
+		return 0
+	}
+
+	return tree.height(node.left) - tree.height(node.right)
+}
+
+func (tree *AVLTree) rightRotate(node *Node) *Node {
+	new_root := node.right
+	node.right = new_root.left
+	new_root.left = node
+	return new_root
+}
+
+func (tree *AVLTree) leftRotate(node *Node) *Node {
+	new_root := node.left
+	node.left = new_root.right
+	new_root.right = node
+	return new_root
+}
+
+func (tree *AVLTree) insertNode(root *Node, value int) *Node {
+
+	if root == nil {
+		return &Node{value: value}
+	}
+
+	if value < root.value {
+		root.left = tree.insertNode(root.left, value)
+	} else {
+		root.right = tree.insertNode(root.right, value)
+	}
+
+	balance_factor := tree.balanceFactor(root)
+
+	if balance_factor > 1 {
+		if value < root.left.value {
+			return tree.leftRotate(root)
+		} else {
+			root.left = tree.rightRotate(root.left)
+			return tree.leftRotate(root)
+		}
+	}
+
+	if balance_factor < -1 {
+		if value > root.right.value {
+			return tree.rightRotate(root)
+		} else {
+			root.right = tree.leftRotate(root.right)
+			return tree.rightRotate(root)
+		}
+	}
+
+	return root
 }
 
 func (tree *AVLTree) insert(value int) {
-	new_node := &AVLTreeNode{value: value}
+	tree.root = tree.insertNode(tree.root, value)
+}
 
-	if tree.root == nil {
-		tree.root = new_node
-		return
+func (tree *AVLTree) searchNode(root *Node, value int) bool {
+	if root == nil {
+		return false
 	}
 
-	current_node := tree.root
-
-	for true {
-		if value < current_node.value {
-			if current_node.left == nil {
-				current_node.left = new_node
-				return
-			}
-			current_node = current_node.left
-		} else {
-			if current_node.right == nil {
-				current_node.right = new_node
-				return
-			}
-			current_node = current_node.right
-		}
+	if value < root.value {
+		return tree.searchNode(root.left, value)
+	} else if value > root.value {
+		return tree.searchNode(root.right, value)
+	} else {
+		return true
 	}
 }
 
 func (tree *AVLTree) search(value int) bool {
-	current_node := tree.root
+	return tree.searchNode(tree.root, value)
+}
 
-	for current_node != nil {
-		if value < current_node.value {
-			current_node = current_node.left
-		} else if value > current_node.value {
-			current_node = current_node.right
-		} else {
-			return true
-		}
+func AVLTreeFromArray(array []int) *AVLTree {
+	avl := AVLTree{}
+
+	for _, value := range array {
+		avl.insert(value)
 	}
 
-	return false
+	return &avl
 }
 
 func main() {
 	array := generateSortedArray(100)
-	x := BinarySearchTreeFromArray(array)
+	x := AVLTreeFromArray(array)
 	fmt.Println(array)
-	fmt.Println(x.search(10))
+	fmt.Println(x.search(101))
 }
