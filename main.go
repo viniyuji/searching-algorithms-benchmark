@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"math"
 	"math/rand"
 )
 
@@ -48,7 +50,7 @@ func generateAlmostSortedArray(size int) []int {
 
 // Linear Search
 
-func linearSearch(array []int, element int) int {
+func LinearSearch(array []int, element int) int {
 	for index, value := range array {
 		if value == element {
 			return index
@@ -59,7 +61,7 @@ func linearSearch(array []int, element int) int {
 
 // Binary Search
 
-func binarySearch(array []int, element int) int {
+func BinarySearch(array []int, element int) int {
 	left := 0
 	right := len(array) - 1
 
@@ -90,7 +92,7 @@ type BinarySearchTree struct {
 	root *Node
 }
 
-func (tree *BinarySearchTree) insert(value int) {
+func (tree *BinarySearchTree) Insert(value int) {
 	new_node := &Node{value: value}
 
 	if tree.root == nil {
@@ -117,7 +119,7 @@ func (tree *BinarySearchTree) insert(value int) {
 	}
 }
 
-func (tree *BinarySearchTree) search(value int) bool {
+func (tree *BinarySearchTree) Search(value int) bool {
 	current_node := tree.root
 
 	for current_node != nil {
@@ -137,14 +139,13 @@ func BinarySearchTreeFromArray(array []int) *BinarySearchTree {
 	bst := BinarySearchTree{}
 
 	for _, value := range array {
-		bst.insert(value)
+		bst.Insert(value)
 	}
 
 	return &bst
 }
 
 // AVL Tree
-
 type AVLTree struct {
 	root *Node
 }
@@ -221,7 +222,7 @@ func (tree *AVLTree) insertNode(root *Node, value int) *Node {
 	return root
 }
 
-func (tree *AVLTree) insert(value int) {
+func (tree *AVLTree) Insert(value int) {
 	tree.root = tree.insertNode(tree.root, value)
 }
 
@@ -239,7 +240,7 @@ func (tree *AVLTree) searchNode(root *Node, value int) bool {
 	}
 }
 
-func (tree *AVLTree) search(value int) bool {
+func (tree *AVLTree) Search(value int) bool {
 	return tree.searchNode(tree.root, value)
 }
 
@@ -247,199 +248,342 @@ func AVLTreeFromArray(array []int) *AVLTree {
 	avl := AVLTree{}
 
 	for _, value := range array {
-		avl.insert(value)
+		avl.Insert(value)
 	}
 
 	return &avl
 }
 
 // Red-Black Tree
+type Color bool
+
+const (
+	Red   Color = false
+	Black Color = true
+)
 
 type redBlackNode struct {
-	value int
-	color int //0 - black, 1 - red
-	left  *redBlackNode
-	right *redBlackNode
+	value  int
+	color  Color
+	parent *redBlackNode
+	left   *redBlackNode
+	right  *redBlackNode
 }
 
-type redBlackTree struct {
+type RedBlackTree struct {
 	root *redBlackNode
 }
 
-func (tree *redBlackTree) isBlack(node *redBlackNode) int {
-	if node == nil || node.color == 0 {
-		return 1
-	}
-	return 0
-}
-
-func (tree *redBlackTree) isRed(node *redBlackNode) int {
-	if node != nil && node.color == 1 {
-		return 1
-	}
-	return 0
-}
-
-// func (tree *redBlackTree) blackHeight(node *redBlackNode) int {
-// 	if node == nil {
-// 		return 0
-// 	}
-
-// 	left_height := tree.blackHeight(node.left)
-// 	right_height := tree.blackHeight(node.right)
-
-// 	if left_height > right_height {
-// 		return left_height + tree.isBlack(node)
-// 	} else {
-// 		return right_height + tree.isBlack(node)
-// 	}
-// }
-
-func (tree *redBlackTree) changeColor(node *redBlackNode) {
-	node.color = 1 - node.color
-	node.left.color = 1 - node.left.color
-	node.right.color = 1 - node.right.color
-}
-
-func (tree *redBlackTree) leftRotate(node *redBlackNode) {
-	new_root := node.right
-	node.right = new_root.left
-	new_root.left = node
-
-	if tree.root == node {
-		tree.root = new_root
+func NewNode(value int, color Color) *redBlackNode {
+	return &redBlackNode{
+		value: value,
+		color: color,
 	}
 }
 
-func (tree *redBlackTree) rightRotate(node *redBlackNode) {
-	new_root := node.left
-	node.left = new_root.right
-	new_root.right = node
-	if tree.root == node {
-		tree.root = new_root
-	}
+func NewRedBlackTree() *RedBlackTree {
+	return &RedBlackTree{}
 }
 
-func (tree *redBlackTree) leftBalance(nodeParent *redBlackNode, nodeSon *redBlackNode, nodeGrandParent *redBlackNode) {
-	if tree.isRed(nodeGrandParent.right) == 1 {
-		tree.changeColor(nodeGrandParent)
-		return
-	} else {
-		if nodeSon == nodeParent.right {
-			tree.leftRotate(nodeParent)
-			return
-		}
-		tree.changeColor(nodeParent)
-		tree.changeColor(nodeGrandParent)
-		tree.rightRotate(nodeGrandParent)
-		return
-	}
-}
-
-func (tree *redBlackTree) rightBalance(nodeParent *redBlackNode, nodeSon *redBlackNode, nodeGrandParent *redBlackNode) {
-	if tree.isRed(nodeGrandParent.left) == 1 {
-		tree.changeColor(nodeGrandParent)
-		return
-	} else {
-		if nodeSon == nodeParent.left {
-			tree.rightRotate(nodeParent)
-			return
-		}
-		tree.changeColor(nodeParent)
-		tree.changeColor(nodeGrandParent)
-		tree.leftRotate(nodeGrandParent)
-		return
-	}
-}
-
-func (tree *redBlackTree) nodeBalance(nodeParent *redBlackNode, nodeSon *redBlackNode, nodeGrandParent *redBlackNode) {
-	if nodeGrandParent != nil && tree.isRed(nodeParent) == 1 && tree.isRed(nodeSon) == 1 {
-		if nodeParent == nodeGrandParent.left {
-			tree.leftBalance(nodeParent, nodeSon, nodeGrandParent)
-		} else {
-			tree.rightBalance(nodeParent, nodeSon, nodeGrandParent)
-		}
-	}
-}
-
-func (tree *redBlackTree) insertNode(root *redBlackNode, parent *redBlackNode, value int) {
-	if root == nil {
-		root = &redBlackNode{value: value, color: 1}
-		// new_node := &redBlackNode{value: value, color: 1}
-		// if parent == nil {
-		// 	tree.root = new_node
-		// } else if value < parent.value {
-		// 	parent.left = new_node
-		// } else {
-		// 	parent.right = new_node
-		// }
-
-	} else if value < root.value {
-		tree.insertNode(root.left, root, value)
-		tree.nodeBalance(root, root.left, parent)
-	} else if value > root.value {
-		tree.insertNode(root.right, root, value)
-		tree.nodeBalance(root, root.right, parent)
-	}
-}
-
-func (tree *redBlackTree) insert(value int) {
-	tree.insertNode(tree.root, nil, value)
-	// tree.root.color = 0
-
+func (tree *RedBlackTree) Insert(value int) {
+	newNode := NewNode(value, Red)
 	if tree.root == nil {
-		fmt.Println("Root is nil")
-		return
+		tree.root = newNode
 	} else {
-		tree.root.color = 0
+		insertNode(tree.root, newNode)
+	}
+	tree.fixInsert(newNode)
+}
+
+func insertNode(root, node *redBlackNode) {
+	if node.value < root.value {
+		if root.left == nil {
+			root.left = node
+			node.parent = root
+		} else {
+			insertNode(root.left, node)
+		}
+	} else {
+		if root.right == nil {
+			root.right = node
+			node.parent = root
+		} else {
+			insertNode(root.right, node)
+		}
 	}
 }
 
-func (tree *redBlackTree) searchNode(root *redBlackNode, value int) bool {
-	if root == nil {
-		return false
+func (tree *RedBlackTree) fixInsert(node *redBlackNode) {
+	for node != tree.root && node.parent.color == Red {
+		if node.parent == node.parent.parent.left {
+			uncle := node.parent.parent.right
+			if uncle != nil && uncle.color == Red {
+				node.parent.color = Black
+				uncle.color = Black
+				node.parent.parent.color = Red
+				node = node.parent.parent
+			} else {
+				if node == node.parent.right {
+					node = node.parent
+					tree.leftRotate(node)
+				}
+				node.parent.color = Black
+				node.parent.parent.color = Red
+				tree.rightRotate(node.parent.parent)
+			}
+		} else {
+			uncle := node.parent.parent.left
+			if uncle != nil && uncle.color == Red {
+				node.parent.color = Black
+				uncle.color = Black
+				node.parent.parent.color = Red
+				node = node.parent.parent
+			} else {
+				if node == node.parent.left {
+					node = node.parent
+					tree.rightRotate(node)
+				}
+				node.parent.color = Black
+				node.parent.parent.color = Red
+				tree.leftRotate(node.parent.parent)
+			}
+		}
 	}
-	if root.value == value {
+	tree.root.color = Black
+}
+
+func (tree *RedBlackTree) leftRotate(node *redBlackNode) {
+	new_node := node.right
+	node.right = new_node.left
+	if new_node.left != nil {
+		new_node.left.parent = node
+	}
+	new_node.parent = node.parent
+	if node.parent == nil {
+		tree.root = new_node
+	} else if node == node.parent.left {
+		node.parent.left = new_node
+	} else {
+		node.parent.right = new_node
+	}
+	new_node.left = node
+	node.parent = new_node
+}
+
+func (tree *RedBlackTree) rightRotate(node *redBlackNode) {
+	new_node := node.left
+	node.left = new_node.right
+	if new_node.right != nil {
+		new_node.right.parent = node
+	}
+	new_node.parent = node.parent
+	if node.parent == nil {
+		tree.root = new_node
+	} else if node == node.parent.right {
+		node.parent.right = new_node
+	} else {
+		node.parent.left = new_node
+	}
+	new_node.right = node
+	node.parent = new_node
+}
+
+func (tree *RedBlackTree) Search(value int) bool {
+	if searchNode(tree.root, value) == nil {
+		return false
+	} else {
 		return true
 	}
+}
 
-	if value < root.value {
-		return tree.searchNode(root.left, value)
+func searchNode(node *redBlackNode, value int) *redBlackNode {
+	if node == nil || node.value == value {
+		return node
+	}
+	if value < node.value {
+		return searchNode(node.left, value)
+	}
+	return searchNode(node.right, value)
+}
+
+func RedBlackTreeFromArray(values []int) *RedBlackTree {
+	tree := NewRedBlackTree()
+	for _, value := range values {
+		tree.Insert(value)
+	}
+	return tree
+}
+
+// Scapegoat Tree
+type scapegoatNode struct {
+	Value int
+	Left  *scapegoatNode
+	Right *scapegoatNode
+	Size  int
+}
+
+type ScapegoatTree struct {
+	Alpha            float64
+	Root             *scapegoatNode
+	Size             int
+	MaxSize          int
+	TreeIsUnbalanced chan bool
+}
+
+func NewScapegoatTree(alpha float64) *ScapegoatTree {
+	if alpha < 0.5 || alpha > 1.0 {
+		panic(errors.New("Alpha is out of range. It should be between 0.5 and 1.0."))
+	}
+	return &ScapegoatTree{
+		Alpha:            alpha,
+		Root:             nil,
+		Size:             0,
+		MaxSize:          0,
+		TreeIsUnbalanced: make(chan bool),
+	}
+}
+
+func (tree *ScapegoatTree) Insert(value int) {
+	newNode := &scapegoatNode{
+		Value: value,
+		Left:  nil,
+		Right: nil,
+		Size:  1,
+	}
+
+	if tree.Root == nil {
+		tree.Root = newNode
 	} else {
-		return tree.searchNode(root.right, value)
+		tree.insertNode(tree.Root, newNode)
+	}
+
+	tree.Size++
+	tree.MaxSize = int(math.Max(float64(tree.Size), float64(tree.MaxSize)))
+
+	if tree.needsRebuild() {
+		go func() {
+			tree.TreeIsUnbalanced <- true
+		}()
 	}
 }
 
-func (tree *redBlackTree) search(value int) bool {
-	return tree.searchNode(tree.root, value)
-}
-
-func redBlackTreeFromArray(array []int) *redBlackTree {
-	tree := redBlackTree{}
-
-	for _, value := range array {
-		tree.insert(value)
+func (tree *ScapegoatTree) insertNode(parent *scapegoatNode, newNode *scapegoatNode) {
+	if newNode.Value < parent.Value {
+		if parent.Left == nil {
+			parent.Left = newNode
+		} else {
+			tree.insertNode(parent.Left, newNode)
+		}
+	} else {
+		if parent.Right == nil {
+			parent.Right = newNode
+		} else {
+			tree.insertNode(parent.Right, newNode)
+		}
 	}
 
-	return &tree
+	parent.Size = 1 + tree.size(parent.Left) + tree.size(parent.Right)
+}
+
+func (tree *ScapegoatTree) Search(value int) bool {
+	if tree.searchNode(tree.Root, value) == nil {
+		return false
+	} else {
+		return true
+	}
+}
+
+func (tree *ScapegoatTree) searchNode(node *scapegoatNode, value int) *scapegoatNode {
+	if node == nil || value == node.Value {
+		return node
+	}
+
+	if value < node.Value {
+		return tree.searchNode(node.Left, value)
+	} else {
+		return tree.searchNode(node.Right, value)
+	}
+}
+
+func (tree *ScapegoatTree) size(node *scapegoatNode) int {
+	if node == nil {
+		return 0
+	}
+	return node.Size
+}
+
+func (tree *ScapegoatTree) needsRebuild() bool {
+	if tree.Root == nil {
+		return false
+	}
+	return float64(tree.Size) > tree.Alpha*float64(tree.MaxSize)
+}
+
+func (tree *ScapegoatTree) Delete(value int) {
+	tree.Root = tree.deleteNode(tree.Root, value)
+}
+
+func (tree *ScapegoatTree) deleteNode(node *scapegoatNode, value int) *scapegoatNode {
+	if node == nil {
+		return nil
+	}
+
+	if value < node.Value {
+		node.Left = tree.deleteNode(node.Left, value)
+	} else if value > node.Value {
+		node.Right = tree.deleteNode(node.Right, value)
+	} else {
+		if node.Left == nil {
+			return node.Right
+		} else if node.Right == nil {
+			return node.Left
+		}
+
+		node.Value = tree.minValue(node.Right)
+		node.Right = tree.deleteNode(node.Right, node.Value)
+	}
+
+	node.Size = 1 + tree.size(node.Left) + tree.size(node.Right)
+	return node
+}
+
+func (tree *ScapegoatTree) minValue(node *scapegoatNode) int {
+	min := node
+	for min.Left != nil {
+		min = min.Left
+	}
+	return min.Value
+}
+
+func ScapegoatTreeFromArray(alpha float64, values []int) *ScapegoatTree {
+	tree := NewScapegoatTree(alpha)
+	for _, value := range values {
+		tree.Insert(value)
+	}
+	return tree
 }
 
 func main() {
 	array_generators := []func(int) []int{generateSortedArray, generateReversedSortedArray, generateRandomSortedArray, generateAlmostSortedArray}
-	//sizes := []int{10, 100, 1000, 10000, 100000, 1000000}
+	// sizes := []int{10, 100, 1000, 10000, 100000, 1000000}
+	sizes := []int{10, 100, 1000}
 
 	for _, array_generator := range array_generators {
-		array := array_generator(5)
-		tree := redBlackTreeFromArray(array)
-		fmt.Println("================================================")
-		for true {
-			if tree.root == nil {
-				break
-			}
+		for _, size := range sizes {
+			fmt.Println("Array size:", size, "Array generator:", array_generator)
+			array := array_generator(size)
 
-			x := tree.root.right
-			fmt.Println(x.value)
-			x = x.right
+			bst := BinarySearchTreeFromArray(array)
+			bst.Search(10)
+
+			avl := AVLTreeFromArray(array)
+			avl.Search(10)
+
+			rbt := RedBlackTreeFromArray(array)
+			rbt.Search(10)
+
+			sgt := ScapegoatTreeFromArray(0.6, array)
+			sgt.Search(10)
 		}
 	}
 }
