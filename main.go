@@ -147,76 +147,88 @@ func BinarySearchTreeFromArray(array []int) *BinarySearchTree {
 
 // AVL Tree
 type AVLTree struct {
-	root *Node
+	root *AVLNode
 }
 
-func (tree *AVLTree) height(node *Node) int {
+type AVLNode struct {
+	value       int
+	left, right *AVLNode
+	height      int
+}
+
+func (tree *AVLTree) height(node *AVLNode) int {
 	if node == nil {
 		return -1
 	}
-
-	left_height := tree.height(node.left)
-	right_height := tree.height(node.right)
-
-	if left_height > right_height {
-		return left_height + 1
-	} else {
-		return right_height + 1
-	}
+	return node.height
 }
 
-func (tree *AVLTree) balanceFactor(node *Node) int {
+func (tree *AVLTree) balanceFactor(node *AVLNode) int {
 	if node == nil {
 		return 0
 	}
-
 	return tree.height(node.left) - tree.height(node.right)
 }
 
-func (tree *AVLTree) rightRotate(node *Node) *Node {
-	new_root := node.right
-	node.right = new_root.left
-	new_root.left = node
-	return new_root
+func (tree *AVLTree) rightRotate(y *AVLNode) *AVLNode {
+	x := y.left
+	z := x.right
+
+	x.right = y
+	y.left = z
+
+	y.height = max(tree.height(y.left), tree.height(y.right)) + 1
+	x.height = max(tree.height(x.left), tree.height(x.right)) + 1
+
+	return x
 }
 
-func (tree *AVLTree) leftRotate(node *Node) *Node {
-	new_root := node.left
-	node.left = new_root.right
-	new_root.right = node
-	return new_root
+func (tree *AVLTree) leftRotate(x *AVLNode) *AVLNode {
+	y := x.right
+	z := y.left
+
+	y.left = x
+	x.right = z
+
+	x.height = max(tree.height(x.left), tree.height(x.right)) + 1
+	y.height = max(tree.height(y.left), tree.height(y.right)) + 1
+
+	return y
 }
 
-func (tree *AVLTree) insertNode(root *Node, value int) *Node {
-
+func (tree *AVLTree) insertNode(root *AVLNode, value int) *AVLNode {
 	if root == nil {
-		return &Node{value: value}
+		return &AVLNode{value: value, height: 0}
 	}
 
 	if value < root.value {
 		root.left = tree.insertNode(root.left, value)
-	} else {
+	} else if value > root.value {
 		root.right = tree.insertNode(root.right, value)
+	} else {
+		return root
 	}
 
-	balance_factor := tree.balanceFactor(root)
+	root.height = 1 + max(tree.height(root.left), tree.height(root.right))
 
-	if balance_factor > 1 {
-		if value < root.left.value {
-			return tree.leftRotate(root)
-		} else {
-			root.left = tree.rightRotate(root.left)
-			return tree.leftRotate(root)
-		}
+	balance := tree.balanceFactor(root)
+
+	if balance > 1 && value < root.left.value {
+		return tree.rightRotate(root)
 	}
 
-	if balance_factor < -1 {
-		if value > root.right.value {
-			return tree.rightRotate(root)
-		} else {
-			root.right = tree.leftRotate(root.right)
-			return tree.rightRotate(root)
-		}
+	if balance < -1 && value > root.right.value {
+		return tree.leftRotate(root)
+	}
+
+	if balance > 1 && value > root.left.value {
+		root.left = tree.leftRotate(root.left)
+		return tree.rightRotate(root)
+	}
+
+	if balance < -1 && value < root.right.value {
+		root.right = tree.rightRotate(root.right)
+		return tree.leftRotate(root)
 	}
 
 	return root
@@ -226,7 +238,7 @@ func (tree *AVLTree) Insert(value int) {
 	tree.root = tree.insertNode(tree.root, value)
 }
 
-func (tree *AVLTree) searchNode(root *Node, value int) bool {
+func (tree *AVLTree) searchNode(root *AVLNode, value int) bool {
 	if root == nil {
 		return false
 	}
@@ -242,6 +254,87 @@ func (tree *AVLTree) searchNode(root *Node, value int) bool {
 
 func (tree *AVLTree) Search(value int) bool {
 	return tree.searchNode(tree.root, value)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func (tree *AVLTree) deleteNode(root *AVLNode, value int) *AVLNode {
+	if root == nil {
+		return root
+	}
+
+	if value < root.value {
+		root.left = tree.deleteNode(root.left, value)
+	} else if value > root.value {
+		root.right = tree.deleteNode(root.right, value)
+	} else {
+		if root.left == nil || root.right == nil {
+			var temp *AVLNode
+			if root.left == nil {
+				temp = root.right
+			} else {
+				temp = root.left
+			}
+
+			if temp == nil {
+				temp = root
+				root = nil
+			} else {
+				*root = *temp
+			}
+			temp = nil
+		} else {
+			temp := minValueNode(root.right)
+			root.value = temp.value
+
+			root.right = tree.deleteNode(root.right, temp.value)
+		}
+	}
+
+	if root == nil {
+		return root
+	}
+
+	root.height = 1 + max(tree.height(root.left), tree.height(root.right))
+
+	balance := tree.balanceFactor(root)
+
+	if balance > 1 && tree.balanceFactor(root.left) >= 0 {
+		return tree.rightRotate(root)
+	}
+
+	if balance > 1 && tree.balanceFactor(root.left) < 0 {
+		root.left = tree.leftRotate(root.left)
+		return tree.rightRotate(root)
+	}
+
+	if balance < -1 && tree.balanceFactor(root.right) <= 0 {
+		return tree.leftRotate(root)
+	}
+
+	if balance < -1 && tree.balanceFactor(root.right) > 0 {
+		root.right = tree.rightRotate(root.right)
+		return tree.leftRotate(root)
+	}
+
+	return root
+}
+
+func (tree *AVLTree) Delete(value int) {
+	tree.root = tree.deleteNode(tree.root, value)
+}
+
+func minValueNode(node *AVLNode) *AVLNode {
+	current := node
+	for current.left != nil {
+		current = current.left
+	}
+	return current
 }
 
 func AVLTreeFromArray(array []int) *AVLTree {
@@ -573,17 +666,24 @@ func main() {
 			fmt.Println("Array size:", size, "Array generator:", array_generator)
 			array := array_generator(size)
 
+			LinearSearch(array, 10)
+
+			BinarySearch(array, 10)
+
 			bst := BinarySearchTreeFromArray(array)
 			bst.Search(10)
 
 			avl := AVLTreeFromArray(array)
 			avl.Search(10)
+			avl.Delete(10)
 
 			rbt := RedBlackTreeFromArray(array)
 			rbt.Search(10)
 
+			// Using 0.6 for alpha
 			sgt := ScapegoatTreeFromArray(0.6, array)
 			sgt.Search(10)
+			sgt.Delete(10)
 		}
 	}
 }
