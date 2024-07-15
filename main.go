@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"reflect"
+	"runtime"
 )
 
 // Array Generators
@@ -658,32 +660,33 @@ func ScapegoatTreeFromArray(alpha float64, values []int) *ScapegoatTree {
 
 func main() {
 	array_generators := []func(int) []int{generateSortedArray, generateReversedSortedArray, generateRandomSortedArray, generateAlmostSortedArray}
-	// sizes := []int{10, 100, 1000, 10000, 100000, 1000000}
-	sizes := []int{10, 100, 1000}
+	sizes := []int{10, 100, 1000, 10000, 100000, 1000000}
 
 	for _, array_generator := range array_generators {
 		for _, size := range sizes {
-			fmt.Println("Array size:", size, "Array generator:", array_generator)
+			fmt.Println("Array size:", size, "Array generator:", runtime.FuncForPC(reflect.ValueOf(array_generator).Pointer()).Name())
 			array := array_generator(size)
 
-			LinearSearch(array, 10)
+			for _, element := range array {
+				LinearSearch(array, element)
 
-			BinarySearch(array, 10)
+				BinarySearch(array, element)
 
-			bst := BinarySearchTreeFromArray(array)
-			bst.Search(10)
+				bst := BinarySearchTreeFromArray(array)
+				bst.Search(element)
 
-			avl := AVLTreeFromArray(array)
-			avl.Search(10)
-			avl.Delete(10)
+				avl := AVLTreeFromArray(array)
+				avl.Search(element)
+				avl.Delete(element)
 
-			rbt := RedBlackTreeFromArray(array)
-			rbt.Search(10)
+				rbt := RedBlackTreeFromArray(array)
+				rbt.Search(element)
 
-			// Using 0.6 for alpha
-			sgt := ScapegoatTreeFromArray(0.6, array)
-			sgt.Search(10)
-			sgt.Delete(10)
+				// Using 0.6 for alpha
+				sgt := ScapegoatTreeFromArray(0.6, array)
+				sgt.Search(element)
+				sgt.Delete(element)
+			}
 		}
 	}
 }
