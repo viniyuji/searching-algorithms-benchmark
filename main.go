@@ -137,6 +137,43 @@ func (tree *BinarySearchTree) Search(value int) bool {
 	return false
 }
 
+func (tree *BinarySearchTree) Delete(value int) {
+	tree.root = tree.deleteNode(tree.root, value)
+}
+
+func (tree *BinarySearchTree) deleteNode(root *Node, value int) *Node {
+	if root == nil {
+		return nil
+	}
+
+	if value < root.value {
+		root.left = tree.deleteNode(root.left, value)
+	} else if value > root.value {
+		root.right = tree.deleteNode(root.right, value)
+	} else {
+		if root.left == nil {
+			return root.right
+		} else if root.right == nil {
+			return root.left
+		}
+
+		// Find the minimum value in the right subtree
+		min := tree.minValue(root.right)
+		root.value = min
+		root.right = tree.deleteNode(root.right, min)
+	}
+
+	return root
+}
+
+func (tree *BinarySearchTree) minValue(node *Node) int {
+	min := node
+	for min.left != nil {
+		min = min.left
+	}
+	return min.value
+}
+
 func BinarySearchTreeFromArray(array []int) *BinarySearchTree {
 	bst := BinarySearchTree{}
 
@@ -291,10 +328,10 @@ func (tree *AVLTree) deleteNode(root *AVLNode, value int) *AVLNode {
 			}
 			temp = nil
 		} else {
-			temp := minValueNode(root.right)
-			root.value = temp.value
+			temp := tree.minValue(root.right)
+			root.value = temp
 
-			root.right = tree.deleteNode(root.right, temp.value)
+			root.right = tree.deleteNode(root.right, temp)
 		}
 	}
 
@@ -331,12 +368,11 @@ func (tree *AVLTree) Delete(value int) {
 	tree.root = tree.deleteNode(tree.root, value)
 }
 
-func minValueNode(node *AVLNode) *AVLNode {
-	current := node
-	for current.left != nil {
-		current = current.left
+func (tree *AVLTree) minValue(node *AVLNode) int {
+	for node.left != nil {
+		node = node.left
 	}
-	return current
+	return node.value
 }
 
 func AVLTreeFromArray(array []int) *AVLTree {
@@ -385,25 +421,25 @@ func (tree *RedBlackTree) Insert(value int) {
 	if tree.root == nil {
 		tree.root = newNode
 	} else {
-		insertNode(tree.root, newNode)
+		tree.insertNode(tree.root, newNode)
 	}
 	tree.fixInsert(newNode)
 }
 
-func insertNode(root, node *redBlackNode) {
+func (tree *RedBlackTree) insertNode(root, node *redBlackNode) {
 	if node.value < root.value {
 		if root.left == nil {
 			root.left = node
 			node.parent = root
 		} else {
-			insertNode(root.left, node)
+			tree.insertNode(root.left, node)
 		}
 	} else {
 		if root.right == nil {
 			root.right = node
 			node.parent = root
 		} else {
-			insertNode(root.right, node)
+			tree.insertNode(root.right, node)
 		}
 	}
 }
@@ -484,21 +520,54 @@ func (tree *RedBlackTree) rightRotate(node *redBlackNode) {
 }
 
 func (tree *RedBlackTree) Search(value int) bool {
-	if searchNode(tree.root, value) == nil {
+	if tree.searchNode(tree.root, value) == nil {
 		return false
 	} else {
 		return true
 	}
 }
 
-func searchNode(node *redBlackNode, value int) *redBlackNode {
+func (tree *RedBlackTree) searchNode(node *redBlackNode, value int) *redBlackNode {
 	if node == nil || node.value == value {
 		return node
 	}
 	if value < node.value {
-		return searchNode(node.left, value)
+		return tree.searchNode(node.left, value)
 	}
-	return searchNode(node.right, value)
+	return tree.searchNode(node.right, value)
+}
+
+func (tree *RedBlackTree) minValue(node *redBlackNode) int {
+	for node.left != nil {
+		node = node.left
+	}
+	return node.value
+}
+
+func (tree *RedBlackTree) Delete(value int) {
+	tree.root = tree.deleteNode(tree.root, value)
+}
+
+func (tree *RedBlackTree) deleteNode(node *redBlackNode, value int) *redBlackNode {
+	if node == nil {
+		return nil
+	}
+
+	if value < node.value {
+		node.left = tree.deleteNode(node.left, value)
+	} else if value > node.value {
+		node.right = tree.deleteNode(node.right, value)
+	} else {
+		if node.left == nil {
+			return node.right
+		} else if node.right == nil {
+			return node.left
+		}
+
+		node.value = tree.minValue(node.right)
+		node.right = tree.deleteNode(node.right, node.value)
+	}
+	return node
 }
 
 func RedBlackTreeFromArray(values []int) *RedBlackTree {
@@ -674,6 +743,7 @@ func main() {
 
 				bst := BinarySearchTreeFromArray(array)
 				bst.Search(element)
+				bst.Delete(element)
 
 				avl := AVLTreeFromArray(array)
 				avl.Search(element)
@@ -681,6 +751,7 @@ func main() {
 
 				rbt := RedBlackTreeFromArray(array)
 				rbt.Search(element)
+				rbt.Delete(element)
 
 				// Using 0.6 for alpha
 				sgt := ScapegoatTreeFromArray(0.6, array)
